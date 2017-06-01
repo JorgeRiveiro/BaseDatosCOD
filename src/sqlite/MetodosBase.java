@@ -18,43 +18,50 @@ import java.sql.Statement;
  * @author JorgePc
  */
 public class MetodosBase {
-    public static Connection conexion = null;
-    public static Statement s = null ;
-    public static String db = "Alumnos.db";
-    public static String nome;
-    public static String apellidos;
-    public static int id;
-    public static int edad;
+
+    static Connection con = null;
+    static Statement s = null;
+    public static String db;
+    public static String url = "jdbc:sqlite:" +db;
+
+    /**
+    * Constructor por defecto
+    */
+    public MetodosBase() {
+    }
    
-    
-    public Connection conectar() {
-        // Crea la nueva bas de datos
+    /**
+    * Constructor que recibe un string para dar nombre a la base de datos
+    * @param db
+    */
+     public MetodosBase(String db){
+        this.db = "alumnos.db";
+    }
+     
+     /**
+      * Metodo para conectar a la base de datos, devuelve false si no se conecta y true si lo hace
+      * @return 
+      */
+    public boolean conectar() {
+
         String url = "jdbc:sqlite:" + db;
-        
-         try (Connection conn = DriverManager.getConnection(url)) {
-            if (conn != null) {
-                DatabaseMetaData meta = conn.getMetaData();
-                System.out.println("El nombre del driver es " + meta.getDriverName());
-                System.out.println("Nueva Base de Datos creada.");
-            }
- 
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        
-        //Conecta a la base de datos
+
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url);
             System.out.println("Conectado");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return false;
         }
-        return conn;
+        return true;
         
     }
+    
+    /**
+     * Metodo para crear una nueva tabla en la base de datos
+     */
     public void crearNuevaTabla() {
-        String url = "jdbc:sqlite:" + db;
         
         String sql = "CREATE TABLE IF NOT EXISTS alumnos (\n"
                 + "	id integer PRIMARY KEY,\n"
@@ -71,69 +78,71 @@ public class MetodosBase {
         }
     }
     
-    public void insertar() {
-        String sql = "INSERT INTO alumnos(nombre,apellidos,edad) VALUES(?,?,?)";
+    /**
+     * Inserta en la tabla los campos id, nombre, apellido y edad
+     * Devuelve un 0 si no se inserta nada y un 1 si se inserta
+     * @param c
+     * @return 
+     */
+    public int insertar(Campos c) {
+        String sql = "INSERT INTO alumnos(id,nombre,apellidos,edad) VALUES(?,?,?,?)";
  
-        try (Connection conn = this.conectar();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, nome);
-            pstmt.setString(2, apellidos);
-            pstmt.setInt(3, edad);
+        try {
+            PreparedStatement pstmt = con.prepareStatement(sql);
+            pstmt.setObject(1, c.getId());
+            pstmt.setString(2, c.getNombre());
+            pstmt.setString(3, c.getApellido());
+            pstmt.setString(4, c.getEdad());
             pstmt.executeUpdate();
             System.out.println("Datos insertados");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return 0;
         }
+        return 1;
     }
     
-    public void ver(){
-        String sql = "SELECT id, nombre, apellidos, edad FROM alumnos";
-        
-        try (Connection conn = this.conectar();
-             Statement stmt  = conn.createStatement();
-             ResultSet rs    = stmt.executeQuery(sql)){
-            
-            // loop through the result set
-            while (rs.next()) {
-                System.out.println(rs.getInt("id") +  "\t" + 
-                                   rs.getString("nombre") + "\t" +
-                                   rs.getString("apellidos")+ "\t" +
-                                   rs.getInt("edad"));
-            }
+    /**
+     * Metodo para modificar los alumnos en la base de datos segun el id
+     * Devuelve un 0 si no se inserta nada y un 1 si se inserta
+     * @param c
+     * @return 
+     */
+    public int update(Campos c) {
+        String sql = " 'UPDATE alumnos SET nombre = '"+c.getNombre()
+                + " 'apellidos = '" + c.getApellido()
+                + " 'edad =' " + c.edad
+                + "WHERE id =" + c.getId();
+ 
+        try {
+            Statement stmt  = con.createStatement();
+            ResultSet rs    = stmt.executeQuery(sql);
+            rs.close();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return 0;
         }
+        return 1;
     }
-    public void update() {
-        String sql = "UPDATE alumnos SET nombre = ? , "
-                + "apellidos = ? , "
-                + "edad = ? "
-                + "WHERE id = ?";
+    
+    /**
+     * Metodo para borrar campos segun el id
+     * Devuelve un 0 si no se inserta nada y un 1 si se inserta
+     * @param id
+     * @return 
+     */
+     public int borrar(String id) {
+        String sql = "DELETE FROM alumnos WHERE id =" + id;
  
-        try (Connection conn = this.conectar();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
- 
-            pstmt.setString(1, nome);
-            pstmt.setString(2, apellidos);
-            pstmt.setInt(3, edad);
-            pstmt.setInt(4, id);
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-     public void delete() {
-        String sql = "DELETE FROM alumnos WHERE id = ?";
- 
-        try (Connection conn = this.conectar();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
- 
-            pstmt.setInt(1, id);
-            pstmt.executeUpdate();
+        try {
+             Statement stmt  = con.createStatement();
+            ResultSet rs    = stmt.executeQuery(sql);
+            rs.close();
  
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            return 0;
         }
+        return 1;
     }
 }
